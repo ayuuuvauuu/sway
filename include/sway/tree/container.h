@@ -132,6 +132,39 @@ struct sway_container {
 	double child_total_width;
 	double child_total_height;
 
+	// These are in layout coordinates.
+	double content_x, content_y;
+	int content_width, content_height;
+
+	// In most cases this is the same as the content x and y, but if the view
+	// refuses to resize to the content dimensions then it can be smaller.
+	// These are in layout coordinates.
+	double surface_x, surface_y;
+
+	enum sway_fullscreen_mode fullscreen_mode;
+
+	bool inhibit_fullscreen;
+	bool is_fullscreen;
+
+	enum sway_container_border border;
+
+	// Used when the view changes to CSD unexpectedly. This will be a non-B_CSD
+	// border which we use to restore when the view returns to SSD.
+	enum sway_container_border saved_border;
+
+	int border_thickness;
+	bool border_top;
+	bool border_bottom;
+	bool border_left;
+	bool border_right;
+
+	struct sway_workspace *workspace; // NULL when hidden in the scratchpad
+	struct sway_container *parent;    // NULL if container in root of workspace
+	list_t *children;                 // struct sway_container
+
+	// Outputs currently being intersected
+	list_t *outputs; // struct sway_output
+
 	// Indicates that the container is a scratchpad container.
 	// Both hidden and visible scratchpad containers have scratchpad=true.
 	// Hidden scratchpad containers have a NULL parent.
@@ -259,6 +292,8 @@ void container_end_mouse_operation(struct sway_container *container);
 
 void container_set_fullscreen(struct sway_container *con,
 		enum sway_fullscreen_mode mode);
+
+void container_request_fullscreen(struct sway_container *con, bool enable);
 
 /**
  * Convenience function.
