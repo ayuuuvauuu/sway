@@ -1,0 +1,78 @@
+name: main
+
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm \
+            base-devel \
+            git \
+            cairo \
+            gdk-pixbuf2 \
+            json-c \
+            lcms2 \
+            libdisplay-info \
+            libegl \
+            libinput \
+            libxcb \
+            libxkbcommon \
+            meson \
+            pango \
+            pcre2 \
+            scdoc \
+            wayland \
+            wayland-protocols \
+            xcb-util-image \
+            xcb-util-wm \
+            xorg-xwayland \
+            seatd \
+            hwdata
+
+      - name: Checkout sway
+        uses: actions/checkout@v4
+        with:
+          repository: swaywm/sway
+          path: sway
+
+      - name: Checkout wlroots
+        run: git clone https://gitlab.freedesktop.org/wlroots/wlroots.git wlroots
+
+      - name: Build wlroots
+        run: |
+          cd wlroots
+          meson --prefix=/usr build -Dexamples=false
+          ninja -C build
+          ninja -C build install
+
+      - name: Setup sway
+        run: |
+          cd sway
+          meson build --fatal-meson-warnings -Dauto_features=enabled -Dsd-bus-provider=libsystemd
+
+      - name: Build sway
+        run: |
+          cd sway
+          ninja -C build
+
+      - name: Package sway
+        run: |
+          cd sway/build
+          tar -czf ../../sway-build.tar.gz *
+        shell: bash
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: sway-build-${{ github.run_number }}
+          name: "Sway Build ${{ github.run_number }}"
+          body: "Automated build of sway with wlroots."
+          files: sway-build.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
