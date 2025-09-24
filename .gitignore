@@ -12,3 +12,5 @@ config-debug
 wayland-*-protocol.*
 /subprojects/wlroots
 subprojects
+sway-build
+sway-build.tar.gz
